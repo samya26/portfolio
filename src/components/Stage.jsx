@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { EDUCATION, ME, PROJECTS, SKILLS } from '../data.js'
+import { celebrate } from '../confetti.js'
 
 /* One pinned, scroll-driven scene (like a short film):
    intro → zoom into the face (résumé) → projects drop from the halo one by one
@@ -17,7 +18,12 @@ const win = (u, a, b, c, d) => Math.min(ramp(u, a, b), 1 - ramp(u, c, d))
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 const focusOf = (u, i) => ease(clamp((0.7 - Math.abs(u - (P0 + 0.5 + i))) / 0.36))
 
-const IMGS = ['front', 'glance', 'side', 'back']
+// eye openings (as % of the square image) and the iris inside each
+const EYES = [
+  { l: 42.273, t: 48.727, w: 5.636, h: 3.364, il: 25.81, it: 2.7, iw: 58.06, ih: 97.3 },
+  { l: 52.273, t: 48.182, w: 5.727, h: 3.636, il: 12.7, it: 5.0, iw: 60.32, ih: 95.0 },
+]
+const SHOT = { dsert: 'shot-dsert.jpg' }
 const RESUME = [
   { when: 'Studying', what: EDUCATION.degree, where: `${EDUCATION.school} · CGPA 8.1` },
   { when: 'Sep 2025', what: 'Winner, Hack for Humanity', where: 'SRM IST · built DisasterGuard' },
@@ -35,7 +41,8 @@ export default function Stage() {
   const sectionRef = useRef(null)
   const stageRef = useRef(null)
   const charRef = useRef(null)
-  const layerRefs = useRef([])
+  const irisRefs = useRef([])
+  const bubbleRef = useRef(null)
   const objRefs = useRef([])
   const cardRefs = useRef([])
   const introRef = useRef(null)
@@ -47,7 +54,7 @@ export default function Stage() {
 
   useEffect(() => {
     let raf = 0, u = 0, target = 0, time = 0, last = performance.now()
-    let mx = 0, my = 0, smx = 0, smy = 0
+    let mx = 0, my = 0, smx = 0, smy = 0, lx = 0, ly = 0, hasMouse = false, still = 0
     const rm = reduced()
 
     const read = () => {
@@ -55,7 +62,7 @@ export default function Stage() {
       const span = s.offsetHeight - window.innerHeight
       target = clamp((window.scrollY - s.offsetTop) / span) * T
     }
-    const onMove = (e) => { mx = e.clientX / window.innerWidth - 0.5; my = e.clientY / window.innerHeight - 0.5 }
+    const onMove = (e) => { if (e.pointerType === 'mouse') { hasMouse = true; still = 0 } mx = e.clientX / window.innerWidth - 0.5; my = e.clientY / window.innerHeight - 0.5 }
 
     const frame = (now) => {
       const dt = Math.min(0.05, (now - last) / 1000); last = now
@@ -72,9 +79,9 @@ export default function Stage() {
       const bx = W / 2, by = H - S + fy * S // face position at rest
 
       // poses: where the face sits and how big she is
-      const rest = { x: bx, y: H * (phone ? 0.4 : 0.42), s: 0.9 }
-      const zoom = phone ? { x: W / 2, y: H * 0.26, s: 1.55 } : { x: W * 0.32, y: H * 0.5, s: 2.35 }
-      const works = phone ? { x: W / 2, y: H * 0.16, s: 0.5 } : { x: W * 0.24, y: H * 0.4, s: 0.92 }
+      const rest = { x: bx, y: H * (phone ? 0.38 : 0.36), s: phone ? 0.88 : 0.8 }
+      const zoom = phone ? { x: W / 2, y: H * 0.27, s: 1.3 } : { x: W * 0.3, y: H * 0.48, s: 1.7 }
+      const works = phone ? { x: W / 2, y: H * 0.17, s: 0.48 } : { x: W * 0.18, y: H * 0.42, s: 0.8 }
       const a = ramp(u, 0.55, 1.6), b = ramp(u, 2.55, 3.3), c = ramp(u, P0 + N + 0.1, P0 + N + 1.0)
       let px = rest.x, py = rest.y, ps = rest.s
       px = lerp(px, zoom.x, a); py = lerp(py, zoom.y, a); ps = lerp(ps, zoom.s, a)
@@ -90,10 +97,14 @@ export default function Stage() {
       ch.style.transform = `translate3d(${px - bx}px, ${py - (top + fy * S)}px, 0) scale(${ps})`
       ch.style.left = `${left}px`; ch.style.top = `${top}px`
 
-      // which angle is showing
-      const wGlance = ramp(u, 2.75, 3.05), wSide = ramp(u, P0 + N + 0.1, P0 + N + 0.4), wBack = ramp(u, P0 + N + 1.9, P0 + N + 2.2)
-      const op = [1 - wGlance, wGlance * (1 - wSide), wSide * (1 - wBack), wBack]
-      layerRefs.current.forEach((el, i) => { if (el) el.style.opacity = String(op[i]) })
+      // eyes: follow the mouse; on phones (or when the mouse rests) they look around on their own
+      still += dt
+      let tx, ty
+      if (hasMouse && still < 4) { tx = mx * 2; ty = my * 2 } else { tx = Math.sin(time * 0.6) * 0.8 + Math.sin(time * 1.7) * 0.2; ty = Math.sin(time * 0.9) * 0.4 }
+      if (c > 0.5) { tx = lerp(tx, 1, c * 0.8); ty = lerp(ty, 0, c * 0.5) }
+      lx += (clamp(tx, -1, 1) - lx) * (rm ? 1 : 0.14); ly += (clamp(ty, -1, 1) - ly) * (rm ? 1 : 0.14)
+      irisRefs.current.forEach((el) => { if (el) el.style.transform = `translate(${lx * 34}%, ${ly * 12}%)` })
+      bubbleRef.current.style.opacity = String(ramp(time, 1.2, 1.6) * (1 - ramp(u, 0.15, 0.5)))
 
       // halo of projects orbiting above her head
       const haloOn = Math.min(1 - ramp(u, 0.5, 1.0), 1) + ramp(u, 2.8, 3.3) * (1 - ramp(u, P0 + N - 0.1, P0 + N + 0.4))
@@ -123,17 +134,17 @@ export default function Stage() {
         el.style.filter = d < 0 && f < 0.05 ? `brightness(0.85) blur(${-d}px)` : 'none'
         const card = cardRefs.current[i]
         if (card) {
-          card.style.opacity = String(f)
-          card.style.transform = `translate3d(0, ${(1 - f) * 26}px, 0)`
+          const cf = clamp((f - 0.55) / 0.45)
+          card.style.opacity = String(cf)
+          card.style.transform = `translate3d(0, ${(1 - cf) * 26}px, 0)`
           card.style.visibility = f > 0.01 ? 'visible' : 'hidden'
           card.style.pointerEvents = f > 0.5 ? 'auto' : 'none'
         }
       })
       // hide the moment the angle changes behind a quick soft blur, like a camera refocusing
-      const swap = Math.max(4 * wGlance * (1 - wGlance), 4 * wSide * (1 - wSide), 4 * wBack * (1 - wBack))
-      const blur = fmax * 6 + swap * 10
+      const blur = fmax * 3
       ch.style.filter = blur > 0.05 ? `blur(${blur}px)` : 'none'
-      ch.style.opacity = String(1 - fmax * 0.35)
+      ch.style.opacity = String(1 - fmax * 0.72)
 
       // intro text + résumé
       const intro = 1 - ramp(u, 0.25, 0.9)
@@ -186,9 +197,13 @@ export default function Stage() {
         <div className="stage__dark" aria-hidden="true" />
 
         <div className="char" ref={charRef} aria-hidden="true">
-          {IMGS.map((n, i) => (
-            <img key={n} ref={(el) => (layerRefs.current[i] = el)} src={`img/${n}.webp`} alt="" draggable="false" fetchPriority={i === 0 ? 'high' : 'auto'} />
+          <img className="char__img" src="img/front-noeyes.webp" alt="" draggable="false" fetchPriority="high" />
+          {EYES.map((e, i) => (
+            <div key={i} className="eye" style={{ left: `${e.l}%`, top: `${e.t}%`, width: `${e.w}%`, height: `${e.h}%` }}>
+              <img ref={(el) => (irisRefs.current[i] = el)} src={`img/iris${i}.webp`} alt="" draggable="false" style={{ left: `${e.il}%`, top: `${e.it}%`, width: `${e.iw}%`, height: `${e.ih}%` }} />
+            </div>
           ))}
+          <p className="bubble" ref={bubbleRef}>hi there! <span>👋</span></p>
         </div>
 
         {PROJECTS.map((p, i) => (
@@ -243,6 +258,9 @@ export default function Stage() {
                 <p className="col__n">{c.n}</p>
                 <h3 className="col__title">{c.title}</h3>
                 <p className="col__sub">{c.sub}</p>
+                {c.n === '01'
+                  ? <a className="col__shot" href={byId.dsert.links[0].href} target="_blank" rel="noopener noreferrer"><i /><img src={`img/${SHOT.dsert}`} alt="D-SERT website" loading="lazy" /></a>
+                  : <div className="col__tiles">{c.items.map((id) => <span key={id} style={{ '--tint': byId[id].tint }}><img src={`img/${byId[id].img}.webp`} alt="" loading="lazy" /></span>)}</div>}
                 <ul className="col__rows">
                   {c.items.map((id) => {
                     const p = byId[id]
@@ -250,8 +268,8 @@ export default function Stage() {
                     return (
                       <li key={id}>
                         {link
-                          ? <a href={link.href} target="_blank" rel="noopener noreferrer"><span>{p.title}</span><em>{link.label} ↗</em></a>
-                          : <div><span>{p.title}</span><em>{p.id === 'urop' ? 'Research' : 'Case study'}</em></div>}
+                          ? <a href={link.href} target="_blank" rel="noopener noreferrer"><span><img className="col__ico" src={`img/${p.img}.webp`} alt="" />{p.title}</span><em>{link.label} ↗</em></a>
+                          : <div><span><img className="col__ico" src={`img/${p.img}.webp`} alt="" />{p.title}</span><em>{p.id === 'urop' ? 'Research' : 'Case study'}</em></div>}
                       </li>
                     )
                   })}
@@ -271,12 +289,13 @@ export default function Stage() {
             </div>
             <div className="col col--contact">
               <p className="col__n">04</p>
+              <p className="contact__open"><i />Open to internships · UI/UX · Product</p>
               <p className="contact__hi">Let's make something.</p>
               <a className="contact__mail" href={`mailto:${ME.email}`}>{ME.email}</a>
               <div className="contact__links">
                 <a href={ME.linkedin} target="_blank" rel="noopener noreferrer">LinkedIn ↗</a>
                 <a href={ME.github} target="_blank" rel="noopener noreferrer">GitHub ↗</a>
-                <a className="is-solid" href={ME.cv} target="_blank" rel="noopener noreferrer">Download CV ↗</a>
+                <a className="is-solid" href={ME.cv} download="Samya-Chadha-CV.pdf" onClick={celebrate}>Download CV ↓</a>
               </div>
               <p className="contact__fine">© {new Date().getFullYear()} {ME.name} · {ME.location}</p>
             </div>
@@ -284,6 +303,7 @@ export default function Stage() {
         </div>
 
         <div className="corner corner--tl" aria-hidden="true"><b>{ME.name}</b><span>Designer &amp; developer</span></div>
+        <div className="sparkles" aria-hidden="true">{[0, 1, 2, 3, 4, 5, 6].map((i) => <i key={i} />)}</div>
         <div className="corner corner--bl" aria-hidden="true">Design · Code · Play</div>
         <div className="corner corner--r" aria-hidden="true">Based in Chennai</div>
         <div className="progress" aria-hidden="true"><i ref={barRef} /></div>

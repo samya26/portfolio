@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import Lenis from 'lenis'
 import { ME } from './data.js'
 import Stage from './components/Stage.jsx'
+import { celebrate } from './confetti.js'
 
 const GitHubIcon = () => (
   <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.3-3.4-1.3-.5-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.6 1 1.6 1 .9 1.6 2.4 1.1 3 .9.1-.7.4-1.1.6-1.4-2.2-.3-4.6-1.1-4.6-5a3.9 3.9 0 0 1 1-2.7 3.6 3.6 0 0 1 .1-2.7s.8-.3 2.8 1a9.6 9.6 0 0 1 5 0c1.9-1.3 2.8-1 2.8-1a3.6 3.6 0 0 1 .1 2.7 3.9 3.9 0 0 1 1 2.7c0 3.9-2.4 4.7-4.6 5 .4.3.7.9.7 1.9v2.8c0 .3.2.6.7.5A10 10 0 0 0 12 2z" /></svg>
@@ -31,7 +32,7 @@ export default function App() {
       <nav className="top" aria-label="Links">
         <a href={ME.github} target="_blank" rel="noopener noreferrer" aria-label="GitHub"><GitHubIcon /></a>
         <a href={ME.linkedin} target="_blank" rel="noopener noreferrer" aria-label="LinkedIn"><LinkedInIcon /></a>
-        <a href={ME.cv} target="_blank" rel="noopener noreferrer" className="top__cv">CV</a>
+        <a href={ME.cv} download="Samya-Chadha-CV.pdf" onClick={celebrate} className="top__cv" aria-label="Download CV">CV</a>
       </nav>
       <main><Stage /></main>
     </>
