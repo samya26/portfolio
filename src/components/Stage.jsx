@@ -20,8 +20,8 @@ const focusOf = (u, i) => ease(clamp((0.7 - Math.abs(u - (P0 + 0.5 + i))) / 0.36
 
 // eye openings (as % of the square image) and the iris inside each
 const EYES = [
-  { l: 42.273, t: 48.727, w: 5.636, h: 3.364, il: 25.81, it: 2.7, iw: 58.06, ih: 97.3 },
-  { l: 52.273, t: 48.182, w: 5.727, h: 3.636, il: 12.7, it: 5.0, iw: 60.32, ih: 95.0 },
+  { l: 42.0, t: 48.364, w: 6.182, h: 4.0, il: 27.94, it: 11.36, iw: 52.94, ih: 81.82 },
+  { l: 52.0, t: 47.818, w: 6.364, h: 4.364, il: 15.71, it: 12.5, iw: 54.29, ih: 79.17 },
 ]
 const SHOT = { dsert: 'shot-dsert.jpg' }
 const RESUME = [
@@ -103,7 +103,7 @@ export default function Stage() {
       if (hasMouse && still < 4) { tx = mx * 2; ty = my * 2 } else { tx = Math.sin(time * 0.6) * 0.8 + Math.sin(time * 1.7) * 0.2; ty = Math.sin(time * 0.9) * 0.4 }
       if (c > 0.5) { tx = lerp(tx, 1, c * 0.8); ty = lerp(ty, 0, c * 0.5) }
       lx += (clamp(tx, -1, 1) - lx) * (rm ? 1 : 0.14); ly += (clamp(ty, -1, 1) - ly) * (rm ? 1 : 0.14)
-      irisRefs.current.forEach((el) => { if (el) el.style.transform = `translate(${lx * 16}%, ${ly * 5}%)` })
+      irisRefs.current.forEach((el) => { if (el) el.style.transform = `translate(${lx * 12}%, ${ly * 3}%)` })
       bubbleRef.current.style.opacity = String(ramp(time, 1.2, 1.6) * (1 - ramp(u, 0.15, 0.5)))
 
       // halo of projects orbiting above her head
@@ -199,7 +199,7 @@ export default function Stage() {
         <div className="char" ref={charRef} aria-hidden="true">
           <img className="char__img" src="img/front-noeyes.webp" alt="" draggable="false" fetchPriority="high" />
           {EYES.map((e, i) => (
-            <div key={i} className="eye" style={{ left: `${e.l}%`, top: `${e.t}%`, width: `${e.w}%`, height: `${e.h}%` }}>
+            <div key={i} className="eye" style={{ WebkitMaskImage: `url(img/eyemask${i}.png)`, maskImage: `url(img/eyemask${i}.png)`, left: `${e.l}%`, top: `${e.t}%`, width: `${e.w}%`, height: `${e.h}%` }}>
               <img ref={(el) => (irisRefs.current[i] = el)} src={`img/iris${i}.webp`} alt="" draggable="false" style={{ left: `${e.il}%`, top: `${e.it}%`, width: `${e.iw}%`, height: `${e.ih}%` }} />
             </div>
           ))}
