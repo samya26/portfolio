@@ -103,7 +103,7 @@ export default function Stage() {
       if (hasMouse && still < 4) { tx = mx * 2; ty = my * 2 } else { tx = Math.sin(time * 0.6) * 0.8 + Math.sin(time * 1.7) * 0.2; ty = Math.sin(time * 0.9) * 0.4 }
       if (c > 0.5) { tx = lerp(tx, 1, c * 0.8); ty = lerp(ty, 0, c * 0.5) }
       lx += (clamp(tx, -1, 1) - lx) * (rm ? 1 : 0.14); ly += (clamp(ty, -1, 1) - ly) * (rm ? 1 : 0.14)
-      irisRefs.current.forEach((el) => { if (el) el.style.transform = `translate(${lx * 34}%, ${ly * 12}%)` })
+      irisRefs.current.forEach((el) => { if (el) el.style.transform = `translate(${lx * 16}%, ${ly * 5}%)` })
       bubbleRef.current.style.opacity = String(ramp(time, 1.2, 1.6) * (1 - ramp(u, 0.15, 0.5)))
 
       // halo of projects orbiting above her head

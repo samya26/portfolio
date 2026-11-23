@@ -142,7 +142,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 
 /* live eyes */
-.eye { position: absolute; clip-path: ellipse(50% 50% at 50% 50%); }
+.eye { position: absolute; clip-path: ellipse(44% 42% at 50% 52%); }
 .eye img { position: absolute; display: block; will-change: transform; }
 .bubble { position: absolute; left: 64%; top: 34%; margin: 0; padding: 8px 14px 9px; background: #fff; color: #3a2230; border-radius: 18px 18px 18px 4px; font-family: var(--hand); font-size: clamp(1rem, 1.9vw, 1.5rem); font-weight: 700; white-space: nowrap; opacity: 0; box-shadow: 0 8px 24px rgba(90, 20, 40, 0.2); animation: bob 2.6s ease-in-out infinite; }
 .bubble span { display: inline-block; animation: wave 1.6s ease-in-out infinite; transform-origin: 70% 70%; }
